@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket RPC Example</title>
+  </head>
+  <body>
+    <h1>RPC with WebSocket</h1>
+    <div>
+      <label>
+        A:
+        <input type="number" id="a" value="0" />
+      </label>
+    </div>
+    <div>
+      <label>
+        B:
+        <input type="number" id="b" value="0" />
+      </label>
+    </div>
+    <button onclick="sendRPC()">Add</button>
+    <div id="result"></div>
+    <div id="error" style="color: red"></div>
+
+    <script>
+      let socket = new WebSocket("ws://localhost:8080/ws");
+
+      socket.onopen = function (e) {
+        console.log("Connected to server");
+      };
+
+      socket.onmessage = function (event) {
+        const response = JSON.parse(event.data);
+        if (response.error) {
+          document.getElementById("error").innerText = response.error;
+          document.getElementById("result").innerText = "";
+        } else {
+          document.getElementById("result").innerText =
+            "Result: " + response.result;
+          document.getElementById("error").innerText = "";
+        }
+      };
+
+      socket.onclose = function (event) {
+        if (event.wasClean) {
+          console.log(
+            `Connection closed cleanly, code=${event.code} reason=${event.reason}`
+          );
+        } else {
+          console.error("Connection died");
+        }
+      };
+
+      socket.onerror = function (error) {
+        console.error(`WebSocket error: ${error.message}`);
+      };
+
+      function sendRPC() {
+        const a = parseInt(document.getElementById("a").value, 10);
+        const b = parseInt(document.getElementById("b").value, 10);
+        const request = {
+          method: "add",
+          params: { a, b },
+        };
+        socket.send(JSON.stringify(request));
+      }
+    </script>
+  </body>
+</html>
